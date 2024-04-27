@@ -96,4 +96,3 @@ function getShipsRemaining(board) {
     return shipCount += count;
   }, 0);
 }
-
