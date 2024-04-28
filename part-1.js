@@ -11,11 +11,8 @@ const startGame = () => {
   let gameBoard = initGameBoard(2);
   let gameOver = false;
 
-  console.log('Gameboard initialized: ', gameBoard)
-
   while(!gameOver) {
     gameBoard = updateGameBoard(gameBoard, [...getNextMove(gameBoard)]);
-    console.log('Gameboard move 1: ', gameBoard)
     if(getShipsRemaining(gameBoard) === 0) gameOver = true;
   }
 

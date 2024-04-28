@@ -1,5 +1,8 @@
 var rs = require('readline-sync');
 
+let board = {}
+const ships = [5, 4, 3, 3.1, 2];
+
 // Utils
 const getIndex = column => column - 1;
 const randomNumInRange = maxNum => Math.floor(Math.random() * (maxNum +1))
@@ -9,79 +12,79 @@ const main = () => {
     guide: false,
   });
 
-  let board = initBoard(10);
+  initBoard(10);
+  placeShips();
   let gameOver = false;
 
-  placeShips(board);
-  console.log(board)
-
   while(!gameOver) {
-    updateBoard(board, [...getNextMove(board)]);
-    if(calcShipsRemaining(board) === 0) gameOver = true;
-    console.log(board);
+    updateBoard([...getNextMove()]); 
+    if (calcShipsRemaining(board) === 0) gameOver = true;
   }
 
   // Restart game Y/N
-  if(rs.keyInYN('You have destroyed all battleships. Would you like to play again?') === true) return main();
+  if (rs.keyInYN('You have destroyed all battleships. Would you like to play again?') === true) return main();
 }
 
 // Game start
 main();
 
-// Helper functions
+// Game Logic
 function initBoard(gridSize) {
-  let board = {};
+  // Clear board when new game started
+  if (Object.keys(board).length) clearBoard();
 
   for (let i = 0; i < gridSize; i++) {
     board[String.fromCharCode(65 + i)] = '0'.repeat(gridSize).split('').map(Number);
   }
-
-  return board
 }
 
-function placeShips(board) {
-  const shipLengths = [5, 4, 3, 3.1, 2]
-  
-  for (let length of shipLengths) {
-    let shipCoords = generateRandomCoords(board, length);
+function clearBoard() {
+  for (const row in board) {
+    delete board[row];
+  }
+}
+
+function placeShips() {
+  for (let shipLength of ships) {
+    let shipCoords = generateRandomCoords(shipLength);
     for ([row, col] of shipCoords) {
-        board[row][col] = length
+        board[row][col] = shipLength
     }
   }
 }
 
 
-function generateRandomCoords(board, length) {
-  const gridSize = board['A'].length;
+function generateRandomCoords(length) {
+  const gridSize = Object.values(board)[0].length || 0;
+  const shipLength = Math.floor(length)
   const axisValues = ['x', 'y']
   const directionValues = [-1, 1]
   
-  const direction = directionValues[randomNumInRange(1)]
-  const axis = axisValues[randomNumInRange(1)]
   const startRow = String.fromCharCode(randomNumInRange(gridSize) + 65)
   const startCol = randomNumInRange(gridSize);
+  const direction = directionValues[randomNumInRange(1)]
+  const axis = axisValues[randomNumInRange(1)]
   const coordsArray = [[startRow, startCol]]
   
   if (axis === 'x') {
-      for (let i = 1; i < Math.floor(length); i++) {
-          coordsArray.push([startRow, startCol + (i * direction)]);
+      for (let i = 1; i < shipLength; i++) {
+        const nextCol = startCol + (i * direction)
+        coordsArray.push([startRow, nextCol]);
       }
-  } else if (axis === 'y'){
-      for (let i = 1; i < Math.floor(length); i++) {
+  } else {
+      for (let i = 1; i < shipLength; i++) {
           const nextRow = String.fromCharCode(startRow.codePointAt(0) + i)
           coordsArray.push([nextRow, startCol]);
       }
   }
   
-  if (!isValidCoords(coordsArray, board)) {
-      return generateRandomCoords(board, length);
-  }
+  if (!isValidCoords(coordsArray)) generateRandomCoords(length);
  
   return coordsArray;
 }
 
-// Check if there is already a ship at those coordinates
-function isValidCoords(coords, board) {
+// Check if there is already a ship at specific coordinates
+function isValidCoords(coords) {
   const rowsArray = Object.keys(board)
   const colsArray = Object.values(board).map((_, index) => index)
   
@@ -90,10 +93,11 @@ function isValidCoords(coords, board) {
           return false;
       }
   }
+
   return true;
 }
 
-function getNextMove(board) {
+function getNextMove() {
   const regexString = `^[A-${String.fromCharCode(Math.floor(65 + board['A'].length))}][1-9]|10$`
   const regex = new RegExp(regexString)
 
@@ -102,41 +106,39 @@ function getNextMove(board) {
     limitMessage: "Invalid coordinates. Please use this format: 'A2'"
   })
   const [row, col] = nextMove.split(/^([a-zA-Z])(\d+)/).slice(1)
-  console.log([row, col])
-  const boardAtCoords = board[row][getIndex(col)]
+  const valueAtCoords = board[row][getIndex(col)]
 
-  // Location has already been chosen (2 or 3)
-  if (boardAtCoords === 1 || boardAtCoords === 9) {
+  // Location has already been chosen - 1: Previous Miss or 9: Previous Hit
+  if (valueAtCoords === 1 || valueAtCoords === 9) {
     console.log('You have already picked this location. Miss!')
-    return getNextMove(board);
+    return getNextMove();
   }
 
   return [row, col];
 }
 
-function updateBoard(board, [row, col]) {
+function updateBoard(coords) {
+  const [row, col] = coords
   const valueAtCoords = board[row][getIndex(col)]
 
   if (valueAtCoords === 0) {            // Location is empty (0): Miss
     board[row][getIndex(col)] = 1
     console.log('You have missed!')
-  } else if (valueAtCoords > 1) {    // Location has a ship that hasn't already been selected (1-5): Hit
+  } else if (valueAtCoords > 1) {      // Location has a ship that hasn't already been selected (1-5): Hit
     board[row][getIndex(col)] = 9
     console.log("value at coords: " + valueAtCoords)
 
-    const hitConfirmationStr = `${isShipSunk(board, valueAtCoords) ? 'Hit. You have sunk a battleship.' : 'Hit.'}`
-    const shipsRemainingStr = `${calcShipsRemaining(board) > 1 ? `${calcShipsRemaining(board)} ships` : `1 ship`} remaining.`
+    const hitConfirmationStr = `${isShipSunk(valueAtCoords) ? 'Hit. You have sunk a battleship.' : 'Hit.'}`
+    const shipsRemainingStr = `${calcShipsRemaining() > 1 ? `${calcShipsRemaining()} ships` : `1 ship`} remaining.`
     console.log(`${hitConfirmationStr} ${shipsRemainingStr}`)
+  } else {
+    console.log('There was an issue updating the board! Try again')
   }
-  
-  return board;
 }
 
-function calcShipsRemaining(board) {
-  const shipValues = [5, 4, 3, 3.1, 2];
-  return shipValues.reduce((shipsRemaining, ship) => {
+function calcShipsRemaining() {
+  return ships.reduce((shipsRemaining, ship) => {
     for (let [_, col] of Object.entries(board)) {
-      // if(col.find(value => value === parseInt(ship))) return shipsRemaining += 1;
       if (col.find(value => value === ship)) return shipsRemaining += 1;
     }
     
@@ -144,9 +146,9 @@ function calcShipsRemaining(board) {
   }, 0);
 }
 
-function isShipSunk(board, ship) {
+function isShipSunk(ship) {
   for (let [_, col] of Object.entries(board)) {
-    if(col.find(value => value === ship)) return false;
+    if (col.find(value => value === ship)) return false;
   }
 
   return true;
