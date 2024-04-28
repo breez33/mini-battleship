@@ -7,28 +7,29 @@ const ships = [5, 4, 3, 3.1, 2];
 const getIndex = column => column - 1;
 const randomNumInRange = maxNum => Math.floor(Math.random() * (maxNum +1))
 
-const main = () => {
+
+// Game start
+main();
+
+// Game Logic
+function main() {
   const pause = rs.keyInPause('Press any key to start the game.', {
     guide: false,
   });
 
+  let gameOver = false;
   initBoard(10);
   placeShips();
-  let gameOver = false;
 
   while(!gameOver) {
     updateBoard([...getNextMove()]); 
-    if (calcShipsRemaining(board) === 0) gameOver = true;
+    if (calcShipsRemaining() === 0) gameOver = true;
   }
 
   // Restart game Y/N
   if (rs.keyInYN('You have destroyed all battleships. Would you like to play again?') === true) return main();
 }
 
-// Game start
-main();
-
-// Game Logic
 function initBoard(gridSize) {
   // Clear board when new game started
   if (Object.keys(board).length) clearBoard();
@@ -53,7 +54,6 @@ function placeShips() {
   }
 }
 
-
 function generateRandomCoords(length) {
   const gridSize = Object.values(board)[0].length || 0;
   const shipLength = Math.floor(length)
@@ -67,15 +67,15 @@ function generateRandomCoords(length) {
   const coordsArray = [[startRow, startCol]]
   
   if (axis === 'x') {
-      for (let i = 1; i < shipLength; i++) {
-        const nextCol = startCol + (i * direction)
-        coordsArray.push([startRow, nextCol]);
-      }
+    for (let i = 1; i < shipLength; i++) {
+      const nextCol = startCol + (i * direction)
+      coordsArray.push([startRow, nextCol]);
+    }
   } else {
-      for (let i = 1; i < shipLength; i++) {
-          const nextRow = String.fromCharCode(startRow.codePointAt(0) + i)
-          coordsArray.push([nextRow, startCol]);
-      }
+    for (let i = 1; i < shipLength; i++) {
+        const nextRow = String.fromCharCode(startRow.codePointAt(0) + i)
+        coordsArray.push([nextRow, startCol]);
+    }
   }
   
   if (!isValidCoords(coordsArray)) generateRandomCoords(length);
@@ -89,9 +89,9 @@ function isValidCoords(coords) {
   const colsArray = Object.values(board).map((_, index) => index)
   
   for (let [row, col] of coords) {
-      if (!rowsArray.includes(row) || !colsArray.includes(col)  || board[row][col]) {
-          return false;
-      }
+    if (!rowsArray.includes(row) || !colsArray.includes(col)  || board[row][col]) {
+        return false;
+    }
   }
 
   return true;
