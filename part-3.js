@@ -1,6 +1,6 @@
 var rs = require('readline-sync');
 
-let board = {}
+let board = {};
 const ships = [5, 4, 3, 3.1, 2];
 
 // Utils
@@ -20,9 +20,10 @@ function main() {
   let gameOver = false;
   initBoard(10);
   placeShips();
+  drawBoard();
 
   while(!gameOver) {
-    updateBoard([...getNextMove()]); 
+    updateBoard([...getNextMove()]);
     if (calcShipsRemaining() === 0) gameOver = true;
   }
 
@@ -51,6 +52,37 @@ function placeShips() {
     for ([row, col] of shipCoords) {
         board[row][col] = shipLength
     }
+  }
+}
+
+function drawBoard() {
+  const boardArray = Object.entries(board);
+  const gridSize = boardArray.length
+  const divider = '   -' + '------'.repeat(gridSize)
+  let header = "   ";
+
+  console.clear();
+  // Log column numbers
+  for (let i = 1; i <= gridSize; i++){
+    header += `   ${i}  `
+  }
+  console.log(header);
+  console.log(divider);
+
+  // Log each row
+  for (let [row, col] of boardArray) {
+    let rowStr = `${row}  |`
+    for (let value of col) {
+        if (value === 1) {
+            rowStr += `  O  |`
+        } else if (value === 9) {
+            rowStr += `  X  |`
+        } else {
+            rowStr += `     |`
+        }
+    }
+    console.log(rowStr)
+    console.log(divider)
   }
 }
 
@@ -98,21 +130,19 @@ function isValidCoords(coords) {
 }
 
 function getNextMove() {
-  const regexString = `^[A-${String.fromCharCode(Math.floor(64 + board['A'].length))}][1-9]|10$`
+  const maxRowLetter = String.fromCharCode(Math.floor(64 + board['A'].length))
+  const regexString = `^[a-${maxRowLetter.toLowerCase()}A-${maxRowLetter}][1-9]|10$`
   const regex = new RegExp(regexString)
 
   const nextMove = rs.question("Enter a location to strike ie 'A2': ", {
     limit: regex,
     limitMessage: "Invalid coordinates. Please use this format: 'A2'"
   })
-  const [row, col] = nextMove.split(/^([a-zA-Z])(\d+)/).slice(1)
+  const [row, col] = nextMove.toUpperCase().split(/^([a-zA-Z])(\d+)/).slice(1)
   const valueAtCoords = board[row][getIndex(col)]
 
   // Location has already been chosen - 1: Previous Miss or 9: Previous Hit
-  if (valueAtCoords === 1 || valueAtCoords === 9) {
-    console.log('You have already picked this location. Miss!')
-    return getNextMove();
-  }
+  if (valueAtCoords === 1 || valueAtCoords === 9) return getNextMove();
 
   return [row, col];
 }
@@ -122,15 +152,17 @@ function updateBoard(coords) {
   const valueAtCoords = board[row][getIndex(col)]
 
   if (valueAtCoords === 0) {            // Location is empty (0): Miss
-    board[row][getIndex(col)] = 1
-    console.log('You have missed!')
+    board[row][getIndex(col)] = 1;
+    drawBoard();
   } else if (valueAtCoords > 1) {      // Location has a ship that hasn't already been selected (1-5): Hit
-    board[row][getIndex(col)] = 9
+    board[row][getIndex(col)] = 9;
+    drawBoard();
 
-    const hitConfirmationStr = `${isShipSunk(valueAtCoords) ? 'Hit. You have sunk a battleship.' : 'Hit.'}`
-    const shipsRemainingStr = `${calcShipsRemaining() === 1 ? `1 ship` : `${calcShipsRemaining()} ships`} remaining.`
-    console.log(`${hitConfirmationStr} ${shipsRemainingStr}`)
+    if (isShipSunk(valueAtCoords)) {
+      console.log(`You have sunk a battleship. ${calcShipsRemaining() == 1 ? '1 ship' : `${calcShipsRemaining()} ships`} remaining.`)
+    }
   } else {
+    drawBoard();
     console.log('There was an issue updating the board! Try again')
   }
 }

@@ -76,7 +76,7 @@ function updateGameBoard(board, [row, col]) {
     console.log('You have missed!')
   } else if (boardAtCoords === 1) {    // Location has a ship that hasn't already been selected (1): Hit
     board[row][getIndex(col)] = 2
-    console.log(`Hit. You have sunk a battleship. ${getShipsRemaining(board) > 1 ? `${getShipsRemaining(board)} ships` : `1 ship`} remaining.`)
+    console.log(`Hit. You have sunk a battleship. ${getShipsRemaining(board) === 1 ? `1 ship` : `${getShipsRemaining(board)} ships`} remaining.`)
   }
   
   return board;
