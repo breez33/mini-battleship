@@ -5,7 +5,7 @@ const ships = [5, 4, 3, 3.1, 2];
 
 // Utils
 const getIndex = column => column - 1;
-const randomNumInRange = maxNum => Math.floor(Math.random() * (maxNum +1))
+const randomNumInRange = maxNum => Math.floor(Math.random() * maxNum)
 
 
 // Game start
@@ -62,8 +62,8 @@ function generateRandomCoords(length) {
   
   const startRow = String.fromCharCode(randomNumInRange(gridSize) + 65)
   const startCol = randomNumInRange(gridSize);
-  const direction = directionValues[randomNumInRange(1)]
-  const axis = axisValues[randomNumInRange(1)]
+  const direction = directionValues[randomNumInRange(2)]
+  const axis = axisValues[randomNumInRange(2)]
   const coordsArray = [[startRow, startCol]]
   
   if (axis === 'x') {
@@ -98,8 +98,9 @@ function isValidCoords(coords) {
 }
 
 function getNextMove() {
-  const regexString = `^[A-${String.fromCharCode(Math.floor(64 + board['A'].length))}][1-9]|10$`
-  const regex = new RegExp(regexString)
+  const maxRowLetter = String.fromCharCode(Math.floor(64 + board['A'].length));
+  const regexString = `^[A-${maxRowLetter}][1-9]|[A-${maxRowLetter}]10$`;
+  const regex = new RegExp(regexString, "i");
 
   const nextMove = rs.question("Enter a location to strike ie 'A2': ", {
     limit: regex,

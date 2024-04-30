@@ -5,7 +5,8 @@ const ships = [5, 4, 3, 3.1, 2];
 
 // Utils
 const getIndex = column => column - 1;
-const randomNumInRange = maxNum => Math.floor(Math.random() * (maxNum +1))
+// Returns 0 - maxNum (exclusive)
+const randomNumInRange = maxNum => Math.floor(Math.random() * maxNum);
 
 
 // Game start
@@ -50,21 +51,21 @@ function placeShips() {
   for (let shipLength of ships) {
     let shipCoords = generateRandomCoords(shipLength);
     for ([row, col] of shipCoords) {
-        board[row][col] = shipLength
+        board[row][col] = shipLength;
     }
   }
 }
 
 function drawBoard() {
   const boardArray = Object.entries(board);
-  const gridSize = boardArray.length
-  const divider = '   -' + '------'.repeat(gridSize)
+  const gridSize = boardArray.length;
+  const divider = '   -' + '------'.repeat(gridSize);
   let header = "   ";
 
   console.clear();
   // Log column numbers
   for (let i = 1; i <= gridSize; i++){
-    header += `   ${i}  `
+    header += `   ${i}  `;
   }
   console.log(header);
   console.log(divider);
@@ -74,11 +75,11 @@ function drawBoard() {
     let rowStr = `${row}  |`
     for (let value of col) {
         if (value === 1) {
-            rowStr += `  O  |`
+            rowStr += `  O  |`;
         } else if (value === 9) {
-            rowStr += `  X  |`
+            rowStr += `  X  |`;
         } else {
-            rowStr += `     |`
+            rowStr += `     |`;
         }
     }
     console.log(rowStr)
@@ -88,24 +89,24 @@ function drawBoard() {
 
 function generateRandomCoords(length) {
   const gridSize = Object.values(board)[0].length || 0;
-  const shipLength = Math.floor(length)
-  const axisValues = ['x', 'y']
-  const directionValues = [-1, 1]
+  const shipLength = Math.floor(length);
+  const axisValues = ['x', 'y'];
+  const directionValues = [-1, 1];
   
-  const startRow = String.fromCharCode(randomNumInRange(gridSize) + 65)
+  const startRow = String.fromCharCode(randomNumInRange(gridSize) + 65);
   const startCol = randomNumInRange(gridSize);
-  const direction = directionValues[randomNumInRange(1)]
-  const axis = axisValues[randomNumInRange(1)]
-  const coordsArray = [[startRow, startCol]]
+  const direction = directionValues[randomNumInRange(2)];
+  const axis = axisValues[randomNumInRange(2)];
+  const coordsArray = [[startRow, startCol]];
   
   if (axis === 'x') {
     for (let i = 1; i < shipLength; i++) {
-      const nextCol = startCol + (i * direction)
+      const nextCol = startCol + (i * direction);
       coordsArray.push([startRow, nextCol]);
     }
   } else {
     for (let i = 1; i < shipLength; i++) {
-        const nextRow = String.fromCharCode(startRow.codePointAt(0) + i)
+        const nextRow = String.fromCharCode(startRow.codePointAt(0) + i);
         coordsArray.push([nextRow, startCol]);
     }
   }
@@ -117,8 +118,8 @@ function generateRandomCoords(length) {
 
 // Check if there is already a ship at specific coordinates
 function isValidCoords(coords) {
-  const rowsArray = Object.keys(board)
-  const colsArray = Object.values(board).map((_, index) => index)
+  const rowsArray = Object.keys(board);
+  const colsArray = Object.values(board).map((_, index) => index);
   
   for (let [row, col] of coords) {
     if (!rowsArray.includes(row) || !colsArray.includes(col)  || board[row][col]) {
@@ -130,26 +131,29 @@ function isValidCoords(coords) {
 }
 
 function getNextMove() {
-  const maxRowLetter = String.fromCharCode(Math.floor(64 + board['A'].length))
-  const regexString = `^[a-${maxRowLetter.toLowerCase()}A-${maxRowLetter}][1-9]|10$`
-  const regex = new RegExp(regexString)
+  const maxRowLetter = String.fromCharCode(Math.floor(64 + board['A'].length));
+  const regexString = `^[A-${maxRowLetter}][1-9]|[A-${maxRowLetter}]10$`;
+  const regex = new RegExp(regexString, "i");
 
   const nextMove = rs.question("Enter a location to strike ie 'A2': ", {
     limit: regex,
     limitMessage: "Invalid coordinates. Please use this format: 'A2'"
   })
-  const [row, col] = nextMove.toUpperCase().split(/^([a-zA-Z])(\d+)/).slice(1)
-  const valueAtCoords = board[row][getIndex(col)]
+  const [row, col] = nextMove.toUpperCase().split(/^([a-zA-Z])(\d+)/).slice(1);
+  const valueAtCoords = board[row][getIndex(col)];
 
   // Location has already been chosen - 1: Previous Miss or 9: Previous Hit
-  if (valueAtCoords === 1 || valueAtCoords === 9) return getNextMove();
+  if (valueAtCoords === 1 || valueAtCoords === 9) {
+    console.log('This location has already been chosen.');
+    return getNextMove();
+  }
 
   return [row, col];
 }
 
 function updateBoard(coords) {
-  const [row, col] = coords
-  const valueAtCoords = board[row][getIndex(col)]
+  const [row, col] = coords;
+  const valueAtCoords = board[row][getIndex(col)];
 
   if (valueAtCoords === 0) {            // Location is empty (0): Miss
     board[row][getIndex(col)] = 1;
@@ -159,11 +163,11 @@ function updateBoard(coords) {
     drawBoard();
 
     if (isShipSunk(valueAtCoords)) {
-      console.log(`You have sunk a battleship. ${calcShipsRemaining() == 1 ? '1 ship' : `${calcShipsRemaining()} ships`} remaining.`)
+      console.log(`You have sunk a battleship. ${calcShipsRemaining() == 1 ? '1 ship' : `${calcShipsRemaining()} ships`} remaining.`);
     }
   } else {
     drawBoard();
-    console.log('There was an issue updating the board! Try again')
+    console.log('There was an issue updating the board! Try again');
   }
 }
 
