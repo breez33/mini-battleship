@@ -2,13 +2,13 @@ var rs = require('readline-sync');
 
 const ships = [5, 4, 3, 3.1, 2];
 // Player or Computer
-let playerBoard = {}
-let computerBoard = {}
-let playersTurn = true
+let playerBoard = {};
+let computerBoard = {};
+let playersTurn = true;
 
 // Utils
 const getIndex = column => column - 1;
-const randomNumInRange = maxNum => Math.floor(Math.random() * (maxNum +1))
+const randomNumInRange = maxNum => Math.floor(Math.random() * (maxNum +1));
 
 
 // Game start
@@ -16,8 +16,20 @@ main();
 
 // Game Logic
 function main() {
-  const pause = rs.keyInPause('Press any key to start the game.', {
-    guide: false,
+  const pause = rs.keyInPause(`
+  _______    ______   ________  ________  __        ________   ______   __    __  ______  _______  
+ /       \\  /      \\ /        |/        |/  |      /        | /      \\ /  |  /  |/      |/       \\ 
+ $$$$$$$  |/$$$$$$  |$$$$$$$$/ $$$$$$$$/ $$ |      $$$$$$$$/ /$$$$$$  |$$ |  $$ |$$$$$$/ $$$$$$$  |
+ $$ |__$$ |$$ |__$$ |   $$ |      $$ |   $$ |      $$ |__    $$ \\__$$/ $$ |__$$ |  $$ |  $$ |__$$ |
+ $$    $$< $$    $$ |   $$ |      $$ |   $$ |      $$    |   $$      \\ $$    $$ |  $$ |  $$    $$/ 
+ $$$$$$$  |$$$$$$$$ |   $$ |      $$ |   $$ |      $$$$$/     $$$$$$  |$$$$$$$$ |  $$ |  $$$$$$$/  
+ $$ |__$$ |$$ |  $$ |   $$ |      $$ |   $$ |_____ $$ |_____ /  \\__$$ |$$ |  $$ | _$$ |_ $$ |      
+ $$    $$/ $$ |  $$ |   $$ |      $$ |   $$       |$$       |$$    $$/ $$ |  $$ |/ $$   |$$ |      
+ $$$$$$$/  $$/   $$/    $$/       $$/    $$$$$$$$/ $$$$$$$$/  $$$$$$/  $$/   $$/ $$$$$$/ $$/       
+                                                                                                   
+
+  Press any key to start the game.`, {
+    guide: false
   });
   
   let gameOver = false;
@@ -26,8 +38,6 @@ function main() {
   initBoard(10, computerBoard);
   placeShips(playerBoard);
   placeShips(computerBoard);
-
-  drawBoard(playerBoard);
 
   while(!gameOver) {
     const activeBoard = playersTurn ? playerBoard : computerBoard;
@@ -95,12 +105,29 @@ function generateShipCoords(board, length) {
 }
 
 function generateRandomCoord(board, gridSize) {
-  const randomRow = String.fromCharCode(randomNumInRange(gridSize) + 65);
+  const randomRow = String.fromCharCode(65 + randomNumInRange(gridSize - 1));
   const randomCol = randomNumInRange(gridSize);
 
-  if (!isValidCoords(board, [randomRow, randomCol])) generateRandomCoord;
+  if (!playersTurn && !isValidCoords(board, [[randomRow, randomCol]])) generateRandomCoord(board, gridSize);
 
   return [randomRow, randomCol];
+}
+
+// Check if there is already a ship at specific coordinates
+function isValidCoords(board, coords) {
+  const rowsArray = Object.keys(board)
+  const colsArray = Object.values(board).map((_, index) => index)
+  
+  for (let [row, col] of coords) {
+    if (!playersTurn && [1,9].includes(board[row][col])) {
+      // Computer has already chosen location
+      return false;
+    } else if (playersTurn && (!rowsArray.includes(row) || !colsArray.includes(col)  || board[row][col])) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function drawBoard(board) {
@@ -135,26 +162,14 @@ function drawBoard(board) {
 }
 
 function takeTurn(board) {
-  let nextMove = playersTurn ? getNextMove(board) : generateRandomCoord(Object.keys(board).length);
+  if (playersTurn) drawBoard(board);
+
+  let nextMove = playersTurn ? getNextMove(board) : generateRandomCoord(board, Object.keys(board).length);
   updateBoard(board, nextMove);
 }
 
-// Check if there is already a ship at specific coordinates
-function isValidCoords(board, coords) {
-  const rowsArray = Object.keys(board)
-  const colsArray = Object.values(board).map((_, index) => index)
-  
-  for (let [row, col] of coords) {
-    if (!rowsArray.includes(row) || !colsArray.includes(col)  || board[row][col]) {
-        return false;
-    }
-  }
-
-  return true;
-}
-
 function getNextMove(board) {
-  const maxRowLetter = String.fromCharCode(Math.floor(64 + board['A'].length))
+  const maxRowLetter = String.fromCharCode(Math.floor(65 + (board['A'].length - 1)))
   const regexString = `^[a-${maxRowLetter.toLowerCase()}A-${maxRowLetter}][1-9]|10$`
   const regex = new RegExp(regexString)
 
@@ -166,29 +181,68 @@ function getNextMove(board) {
   const valueAtCoords = board[row][getIndex(col)]
 
   // Location has already been chosen - 1: Previous Miss or 9: Previous Hit
-  if (valueAtCoords === 1 || valueAtCoords === 9) return getNextMove();
+  if (valueAtCoords === 1 || valueAtCoords === 9) return getNextMove(board);
 
   return [row, col];
 }
 
 function updateBoard(board, coords) {
-  const [row, col] = coords
-  const valueAtCoords = board[row][getIndex(col)]
+  const [row, col] = coords;
+  const valueAtCoords = board[row][playersTurn ? getIndex(col) : col];
+  let updatedValue = 0
 
   if (valueAtCoords === 0) {            // Location is empty (0): Miss
     board[row][getIndex(col)] = 1;
-    drawBoard();
+    updatedValue = 1;
   } else if (valueAtCoords > 1) {      // Location has a ship that hasn't already been selected (1-5): Hit
     board[row][getIndex(col)] = 9;
-    if (playersTurn) drawBoard();
-
-    if (isShipSunk(board, valueAtCoords)) {
-      console.log(`You have sunk a battleship. ${calcShipsRemaining() == 1 ? '1 ship' : `${calcShipsRemaining()} ships`} remaining.`)
-    }
+    updatedValue = 9;
   } else {
-    if (playersTurn) drawBoard();
     console.log('There was an issue updating the board! Try again')
+    return;
   }
+
+  notifyPlayer(board, valueAtCoords, updatedValue);
+}
+
+function notifyPlayer(board, shipValue, currentValue) {
+  const isSunk = isShipSunk(board, shipValue);
+  const computerHitConfirmation = `${isSunk ? 'Hit. Your battleship has been sunk.' : 'Hit.'}`
+  const playerHitConfirmation = `${isSunk ? 'Hit. You have sunk a battleship.' : 'Hit.'}`
+  const activePlayerString = playersTurn ? playerHitConfirmation : computerHitConfirmation;
+  const shipsRemainingStr = `${calcShipsRemaining(board) === 1 ? `1 ship` : `${calcShipsRemaining(board)} ships`} remaining.`
+
+  console.clear();
+  if (playersTurn) {
+    drawBoard(board);
+  } else {
+    console.log('The computer takes a turn...')
+    console.log(`
+    __       __  ______   ______    ______   ______  __        ________ 
+   /  \\     /  |/      | /      \\  /      \\ /      |/  |      /        |
+   $$  \\   /$$ |$$$$$$/ /$$$$$$  |/$$$$$$  |$$$$$$/ $$ |      $$$$$$$$/ 
+   $$$  \\ /$$$ |  $$ |  $$ \\__$$/ $$ \\__$$/   $$ |  $$ |      $$ |__    
+   $$$$  /$$$$ |  $$ |  $$      \\ $$      \\   $$ |  $$ |      $$    |   
+   $$ $$ $$/$$ |  $$ |   $$$$$$  | $$$$$$  |  $$ |  $$ |      $$$$$/    
+   $$ |$$$/ $$ | _$$ |_ /  \\__$$ |/  \\__$$ | _$$ |_ $$ |_____ $$ |_____ 
+   $$ | $/  $$ |/ $$   |$$    $$/ $$    $$/ / $$   |$$       |$$       |
+   $$/      $$/ $$$$$$/  $$$$$$/   $$$$$$/  $$$$$$/ $$$$$$$$/ $$$$$$$$/ 
+   __         ______   __    __  __    __   ______   __    __  ________  _______  
+  /  |       /      \\ /  |  /  |/  \\  /  | /      \\ /  |  /  |/        |/       \\ 
+  $$ |      /$$$$$$  |$$ |  $$ |$$  \\ $$ |/$$$$$$  |$$ |  $$ |$$$$$$$$/ $$$$$$$  |
+  $$ |      $$ |__$$ |$$ |  $$ |$$$  \\$$ |$$ |  $$/ $$ |__$$ |$$ |__    $$ |  $$ |
+  $$ |      $$    $$ |$$ |  $$ |$$$$  $$ |$$ |      $$    $$ |$$    |   $$ |  $$ |
+  $$ |      $$$$$$$$ |$$ |  $$ |$$ $$ $$ |$$ |   __ $$$$$$$$ |$$$$$/    $$ |  $$ |
+  $$ |_____ $$ |  $$ |$$ \\__$$ |$$ |$$$$ |$$ \\__/  |$$ |  $$ |$$ |_____ $$ |__$$ |
+  $$       |$$ |  $$ |$$    $$/ $$ | $$$ |$$    $$/ $$ |  $$ |$$       |$$    $$/ 
+  $$$$$$$$/ $$/   $$/  $$$$$$/  $$/   $$/  $$$$$$/  $$/   $$/ $$$$$$$$/ $$$$$$$/  
+                                                                                                                                                               
+  `)
+  }
+
+  const pause = rs.keyInPause(`${currentValue === 9 ? activePlayerString : 'Miss.'} ${shipsRemainingStr} (Presse any key to pass turn)`, {
+    guide: false
+  });
 }
 
 function calcShipsRemaining(board) {
