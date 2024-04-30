@@ -106,7 +106,7 @@ function getNextMove() {
     limit: regex,
     limitMessage: "Invalid coordinates. Please use this format: 'A2'"
   })
-  const [row, col] = nextMove.split(/^([a-zA-Z])(\d+)/).slice(1)
+  const [row, col] = nextMove.toUpperCase().split(/^([a-zA-Z])(\d+)/).slice(1)
   const valueAtCoords = board[row][getIndex(col)]
 
   // Location has already been chosen - 1: Previous Miss or 9: Previous Hit
