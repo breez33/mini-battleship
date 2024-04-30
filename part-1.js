@@ -32,23 +32,22 @@ function initGameBoard(shipCount) {
   };
 
   for (let i = 0; i < shipCount; i++) {
-    const [rowCoord, colCoord] = generateRandomCoords(Object.entries(board));
-    board[rowCoord][colCoord] = 1;
+    const [row, col] = generateRandomCoords(board);
+    board[row][col] = 1;
   }
 
   return board
 }
 
-function generateRandomCoords(coordsArray) {
-  const coordsList = coordsArray;
-  const randCoords = [String.fromCharCode(Math.floor(Math.random() * 3) + 65), Math.floor(Math.random() * 3)];
+function generateRandomCoords(board) {
+  const randomCoords = [String.fromCharCode(Math.floor(Math.random() * 3) + 65), Math.floor(Math.random() * 3)];
 
   // Check if there is already a ship at those coordinates
-  if (coordsList.find(([rowCoord, colCoord]) => rowCoord === randCoords[0] && colCoord[randCoords] == 1)) {
-    return generateRandomCoords(coordsList);
+  if (Object.entries(board).find(([row, col]) => row === randomCoords[0] && col[randomCoords] == 1)) {
+    return generateRandomCoords(board);
   }
 
-  return randCoords;
+  return randomCoords;
 }
 
 function getNextMove(board) {
